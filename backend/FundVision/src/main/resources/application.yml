@@ -1,3 +1,20 @@
 spring:
   application:
     name: FundVision
+  datasource:
+    url: ${SPRING_NEON_URL}
+    username: ${SPRING_NEON_USERNAME}
+    password: ${SPRING_NEON_PASSWORD}
+    driverClassName: org.postgresql.Driver
+  jpa:
+    database-platform: org.hibernate.dialect.PostgreSQLDialect
+    hibernate:
+      ddl-auto: update
+    properties:
+      hibernate:
+        jdbc:
+          batch_size: 50
+          lob:
+            non_contextual_creation: true
+        order_inserts: true
+        order_updates: true
