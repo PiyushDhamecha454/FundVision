@@ -22,13 +22,13 @@ function App() {
 
   const fundTypes = [
     "Equity Funds",
-    "Bond Funds",
-    "Money Market Funds",
+    "Debt Funds",
+    "Hybrid Funds",
     "Index Funds",
-    "ETFs",
-    "Mutual Funds",
-    "Hedge Funds",
-    "Real Estate Funds",
+    "Equity Linked Savings Scheme (ELSS)",
+    "Contra Funds",
+    "Thematic Funds",
+    "ETFs"
   ]
 
   const sectors = [
@@ -54,7 +54,6 @@ function App() {
   const handleSubmit = (e) => {
     e.preventDefault()
     console.log("Form submitted:", formData)
-    // Will handle form submission here
   }
   return (
     <div>
@@ -68,7 +67,7 @@ function App() {
             <div className="container mx-auto px-4 py-8 max-w-4xl">
               <Card>
                 <CardHeader>
-                  <CardTitle className="text-2xl">Investment Portfolio Setup</CardTitle>
+                  <CardTitle className="text-2xl">Investment Portfolio Preference Setup</CardTitle>
                   <CardDescription>
                     Help us understand your investment preferences to create a personalized portfolio.
                   </CardDescription>
@@ -214,7 +213,7 @@ function App() {
                     {/* Submit Button */}
                     <div className="pt-4">
                       <Button type="submit" className="w-full sm:w-auto">
-                        Create Portfolio
+                        Save Preference
                       </Button>
                     </div>
                   </form>
