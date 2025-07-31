@@ -21,4 +21,6 @@ public class Fund {
     private Double exitLoad;
 
     private Double expenseRatio;
+
+    private Double rating;
 }
