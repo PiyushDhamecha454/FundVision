@@ -9,222 +9,168 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { IndianRupee } from "lucide-react"
 import { ThemeProvider } from "next-themes"
 import { Navbar } from './components/Navbar';
+import InteractiveBackground from './components/ui/InteractiveBackground'
+import { Slider } from "@/components/ui/slider"
+import { Separator } from "@/components/ui/separator"
+import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs"
+import { fundNames } from '../../converter/data/fundNames';
+import Dashboard from './components/Dashboard';
 
 function App() {
+  const [tab, setTab] = useState("explain");
+  const [loading, setLoading] = useState(false);
+  const [apiResponse, setApiResponse] = useState(null);
+
   const [formData, setFormData] = useState({
-    username: "",
-    riskAppetite: "",
-    investmentHorizon: "",
-    investmentAmount: "",
-    preferredFundTypes: [],
-    sectorPreferences: [],
-  })
+    aum: "",
+    rating: 0,
+    expenseRatio: 0.0,
+  });
 
-  const fundTypes = [
-    "Equity Funds",
-    "Debt Funds",
-    "Hybrid Funds",
-    "Index Funds",
-    "Equity Linked Savings Scheme (ELSS)",
-    "Contra Funds",
-    "Thematic Funds",
-    "ETFs"
-  ]
+  const handleSubmitExplain = async (e) => {
+    e.preventDefault();
+    setLoading(true);
 
-  const sectors = [
-    "Technology",
-    "Healthcare",
-    "Financial Services",
-    "Consumer Goods",
-    "Energy",
-    "Real Estate",
-    "Utilities",
-    "Materials",
-    "Industrials",
-    "Telecommunications",
-  ]
+    try {
+      const res = await fetch("http://127.0.0.1:8000/predict", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          expense_ratio: Number(formData.expenseRatio),
+          aum: Number(formData.aum),
+          rating: Number(formData.rating)
+        })
+      });
 
-  const handleCheckboxChange = (value, field) => {
-    setFormData((prev) => ({
-      ...prev,
-      [field]: prev[field].includes(value) ? prev[field].filter((item) => item !== value) : [...prev[field], value],
-    }))
+      const data = await res.json();
+      console.log("Explain Response:", data);
+      setApiResponse(data);
+    } catch (err) {
+      console.error("Error:", err);
+      alert("Explain API failed");
+    } finally {
+      setLoading(false);
+    }
   }
 
-  const handleSubmit = (e) => {
-    e.preventDefault()
-    console.log("Form submitted:", formData)
-  }
   return (
-    <div>
-      {/* <GoogleLoginButton />  */}
-      <ThemeProvider attribute="class" defaultTheme="system" enableSystem disableTransitionOnChange>
-        <div className="min-h-screen bg-background">
-          <Navbar />
-          <main>
-            {/* Investment Form */}
+    <ThemeProvider attribute="class" defaultTheme="system">
+      <div className="min-h-screen bg-background/5 relative">
+        <InteractiveBackground />
+        <Navbar />
 
-            <div className="container mx-auto px-4 py-8 max-w-4xl">
-              <Card>
+        <div className="container mx-auto px-4 py-8 max-w-4xl">
+          
+          {/* Tabs UI */}
+          <Tabs value={tab} onValueChange={setTab} className="w-full">
+            <TabsList className="grid grid-cols-4 mb-6">
+              <TabsTrigger value="explain">Explain</TabsTrigger>
+              <TabsTrigger value="recommend">Recommend</TabsTrigger>
+              <TabsTrigger value="summary">Summary</TabsTrigger>
+              <TabsTrigger value="insights">Insights</TabsTrigger>
+            </TabsList>
+
+            {/* ✅ EXPLAIN TAB */}
+            <TabsContent value="explain">
+              <Card className="bg-background/30 backdrop-blur-sm">
                 <CardHeader>
-                  <CardTitle className="text-2xl">Investment Portfolio Preference Setup</CardTitle>
-                  <CardDescription>
-                    Help us understand your investment preferences to create a personalized portfolio.
-                  </CardDescription>
+                  <CardTitle className="text-xl font-bold">Explain Fund Behavior</CardTitle>
+                  <CardDescription>Enter fund metrics to analyze stock behavior.</CardDescription>
                 </CardHeader>
                 <CardContent>
-                  <form onSubmit={handleSubmit} className="space-y-6">
-                    {/* Username */}
-                    <div className="space-y-2">
-                      <Label htmlFor="username">Username</Label>
+                  
+                  <form onSubmit={handleSubmitExplain} className="space-y-6">
+
+                    {/* AUM */}
+                    <div>
+                      <Label>AUM</Label>
                       <Input
-                        id="username"
-                        type="text"
-                        placeholder="Enter your username"
-                        value={formData.username}
-                        onChange={(e) => setFormData((prev) => ({ ...prev, username: e.target.value }))}
+                        type="number"
+                        placeholder="Enter AUM"
+                        value={formData.aum}
+                        onChange={(e) => setFormData(prev => ({ ...prev, aum: e.target.value }))}
                         required
                       />
                     </div>
 
-                    {/* Risk Appetite and Investment Horizon - Side by side on desktop */}
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                      <div className="space-y-2">
-                        <Label htmlFor="risk-appetite">Risk Appetite</Label>
-                        <Select
-                          value={formData.riskAppetite}
-                          onValueChange={(value) => setFormData((prev) => ({ ...prev, riskAppetite: value }))}
-                        >
-                          <SelectTrigger>
-                            <SelectValue placeholder="Select risk level" />
-                          </SelectTrigger>
-                          <SelectContent>
-                            <SelectItem value="LOW">Low Risk</SelectItem>
-                            <SelectItem value="MEDIUM">Medium Risk</SelectItem>
-                            <SelectItem value="HIGH">High Risk</SelectItem>
-                          </SelectContent>
-                        </Select>
-                      </div>
-
-                      <div className="space-y-2">
-                        <Label htmlFor="investment-horizon">Investment Horizon</Label>
-                        <Select
-                          value={formData.investmentHorizon}
-                          onValueChange={(value) => setFormData((prev) => ({ ...prev, investmentHorizon: value }))}
-                        >
-                          <SelectTrigger>
-                            <SelectValue placeholder="Select time horizon" />
-                          </SelectTrigger>
-                          <SelectContent>
-                            <SelectItem value="SHORT_TERM">Short Term (1-3 years)</SelectItem>
-                            <SelectItem value="MEDIUM_TERM">Medium Term (3-7 years)</SelectItem>
-                            <SelectItem value="LONG_TERM">Long Term (7+ years)</SelectItem>
-                          </SelectContent>
-                        </Select>
-                      </div>
-                    </div>
-
-                    {/* Investment Amount */}
-                    <div className="space-y-2">
-                      <Label htmlFor="investment-amount">Investment Amount (₹)</Label>
-                      <div className="relative">
-                        <div className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground">
-                          <IndianRupee className="h-4 w-4" />
-                        </div>
-                        <Input
-                          id="investment-amount"
-                          type="number"
-                          placeholder="Enter investment amount"
-                          min="0"
-                          step="1000"
-                          value={formData.investmentAmount}
-                          onChange={(e) => setFormData((prev) => ({ ...prev, investmentAmount: e.target.value }))}
-                          className="pl-10 pr-4 [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none [-moz-appearance:textfield]"
-                          required
+                    {/* Rating */}
+                    <div>
+                      <Label>Rating</Label>
+                      <div className="flex items-center gap-4">
+                        <Slider
+                          value={[formData.rating]}
+                          onValueChange={(value) => setFormData(prev => ({ ...prev, rating: value[0] }))}
+                          min={0}
+                          max={5}
+                          step={1}
                         />
-                        <div className="absolute right-1 top-1/2 transform -translate-y-1/2 flex flex-col">
-                          <button
-                            type="button"
-                            onClick={() => {
-                              const currentValue = Number.parseInt(formData.investmentAmount) || 0
-                              setFormData((prev) => ({ ...prev, investmentAmount: (currentValue + 1000).toString() }))
-                            }}
-                            className="h-4 w-6 flex items-center justify-center text-xs bg-muted hover:bg-muted-foreground/20 rounded-t border border-b-0 transition-colors"
-                            aria-label="Increase amount"
-                          >
-                            ▲
-                          </button>
-                          <button
-                            type="button"
-                            onClick={() => {
-                              const currentValue = Number.parseInt(formData.investmentAmount) || 0
-                              if (currentValue >= 1000) {
-                                setFormData((prev) => ({ ...prev, investmentAmount: (currentValue - 1000).toString() }))
-                              }
-                            }}
-                            className="h-4 w-6 flex items-center justify-center text-xs bg-muted hover:bg-muted-foreground/20 rounded-b border border-t-0 transition-colors"
-                            aria-label="Decrease amount"
-                          >
-                            ▼
-                          </button>
-                        </div>
-                      </div>
-                      <p className="text-xs text-muted-foreground">Minimum investment: ₹1,000</p>
-                    </div>
-
-                    {/* Preferred Fund Types */}
-                    <div className="space-y-3">
-                      <Label>Preferred Fund Types</Label>
-                      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
-                        {fundTypes.map((fundType) => (
-                          <div key={fundType} className="flex items-center space-x-2">
-                            <Checkbox
-                              id={`fund-${fundType}`}
-                              checked={formData.preferredFundTypes.includes(fundType)}
-                              onCheckedChange={() => handleCheckboxChange(fundType, "preferredFundTypes")}
-                            />
-                            <Label htmlFor={`fund-${fundType}`} className="text-sm font-normal cursor-pointer">
-                              {fundType}
-                            </Label>
-                          </div>
-                        ))}
+                        <Input
+                          type="number"
+                          min="0"
+                          max="5"
+                          step="1"
+                          value={formData.rating}
+                          onChange={(e) => setFormData(prev => ({ ...prev, rating: Number(e.target.value) }))}
+                          className="w-20 text-center"
+                        />
                       </div>
                     </div>
 
-                    {/* Sector Preferences */}
-                    <div className="space-y-3">
-                      <Label>Sector Preferences</Label>
-                      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
-                        {sectors.map((sector) => (
-                          <div key={sector} className="flex items-center space-x-2">
-                            <Checkbox
-                              id={`sector-${sector}`}
-                              checked={formData.sectorPreferences.includes(sector)}
-                              onCheckedChange={() => handleCheckboxChange(sector, "sectorPreferences")}
-                            />
-                            <Label htmlFor={`sector-${sector}`} className="text-sm font-normal cursor-pointer">
-                              {sector}
-                            </Label>
-                          </div>
-                        ))}
+                    {/* Expense Ratio */}
+                    <div>
+                      <Label>Expense Ratio</Label>
+                      <div className="flex items-center gap-4">
+                        <Slider
+                          value={[formData.expenseRatio]}
+                          onValueChange={(value) => setFormData(prev => ({ ...prev, expenseRatio: value[0] }))}
+                          min={0}
+                          max={5}
+                          step={0.01}
+                        />
+                        <Input
+                          type="number"
+                          min="0"
+                          max="5"
+                          step="0.01"
+                          value={formData.expenseRatio}
+                          onChange={(e) =>
+                            setFormData(prev => ({ ...prev, expenseRatio: parseFloat(e.target.value) || 0 }))
+                          }
+                          className="w-20 text-center"
+                        />
                       </div>
                     </div>
 
-                    {/* Submit Button */}
-                    <div className="pt-4">
-                      <Button type="submit" className="w-full sm:w-auto">
-                        Save Preference
-                      </Button>
-                    </div>
+                    <Button type="submit" className="w-full" disabled={loading}>
+                      {loading ? "Explaining..." : "Explain"}
+                    </Button>
                   </form>
                 </CardContent>
               </Card>
-            </div>
 
-          </main>
+              {/* Show Dashboard if API returned data */}
+              {apiResponse && (
+                <Dashboard data={{ ...formData, ...apiResponse }} />
+              )}
+            </TabsContent>
+
+            {/* ✅ OTHER TABS PLACEHOLDERS */}
+            <TabsContent value="recommend">
+              <Card className="p-6 text-center">Recommendation model coming soon…</Card>
+            </TabsContent>
+
+            <TabsContent value="summary">
+              <Card className="p-6 text-center">Summary of fund metrics will show here</Card>
+            </TabsContent>
+
+            <TabsContent value="insights">
+              <Card className="p-6 text-center">AI Insights dashboard coming soon…</Card>
+            </TabsContent>
+
+          </Tabs>
         </div>
-      </ThemeProvider>
-    </div>
+      </div>
+    </ThemeProvider>
   );
 }
 
