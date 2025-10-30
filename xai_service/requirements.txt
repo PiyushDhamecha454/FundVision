@@ -1,8 +1,14 @@
 fastapi
 uvicorn
 pandas
-numpy
 scikit-learn
 joblib
+python-dotenv
 matplotlib
-shap
+shap            
+transformers    
+torch==2.6.0    
+tavily          
+beautifulsoup4  
+huggingface-hub  
+python-dotenv
