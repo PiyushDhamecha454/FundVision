@@ -8,10 +8,24 @@ import joblib
 from xai_service.load_model import load_model
 from xai_service.shap_explainer import explain_prediction, generate_summary_plot
 from xai_service.live_insights import get_live_insights
+from fastapi.middleware.cors import CORSMiddleware
 
 
 
 app = FastAPI(title="FundVision XAI API")
+origins = [
+    "http://localhost:3000",  # Frontend local dev
+    "http://127.0.0.1:3000",  # Alternate local
+    "https://fundvision.vercel.app",  # Example production frontend (change as needed)
+]
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],           # Allow these frontend domains
+    allow_credentials=True,
+    allow_methods=["*"],             # Allow all HTTP methods (GET, POST, etc.)
+    allow_headers=["*"],             # Allow all headers
+)
 
 MODEL, FEATURES = load_model()
 DATA_PATH = os.path.join(os.path.dirname(__file__), "data/comprehensive_mutual_funds_data.csv")

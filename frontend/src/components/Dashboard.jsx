@@ -117,12 +117,16 @@ export default function Dashboard({ data }) {
         📈 Mutual Fund Feature Impact Dashboard
       </h2>
 
-      <div className="text-xl text-center mb-4 font-medium">
-        Fund Age: {data.top_feature_impact.fund_age_yr} years
+      <div className="text-xl text-center mb-4">
+        Fund Age: <div className="font-medium">{data.top_feature_impact.fund_age_yr} years</div>
+      </div>
+
+      <div className="text-xl text-center mb-4">
+        Predicted Return: <div className="font-medium">{data.predicted_return} %</div>
       </div>
 
       {/* AUM vs Expense */}
-      <div>
+      <div className="mt-15">
         <h3 className="font-semibold text-lg mb-2 text-center">
           AUM vs Expense Ratio
         </h3>
