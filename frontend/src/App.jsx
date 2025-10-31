@@ -334,7 +334,7 @@ function App() {
                 </Card>
 
                 {/* LLM SUMMARY */}
-                <Card className="p-6 space-y-3">
+                <Card className="p-6 space-y-3 bg-background/30 backdrop-blur-sm">
                   <h3 className="text-xl font-semibold text-center">Model Feature Impact Summary</h3>
 
                   <p>
@@ -343,7 +343,7 @@ function App() {
                   </p>
 
                   <table className="w-full text-sm border rounded-lg overflow-hidden">
-                    <thead className="bg-gray-100 font-medium">
+                    <thead className="font-medium">
                       <tr>
                         <th className="p-2 text-left">Feature</th>
                         <th className="p-2 text-left">Behavior</th>
@@ -355,10 +355,10 @@ function App() {
                       <tr><td className="p-2 font-medium">Fund Age</td><td className="p-2">Older funds outperform</td><td className="p-2 text-green-600">Positive</td></tr>
                       <tr><td className="p-2 font-medium">Rating</td><td className="p-2">1–5 stars</td><td className="p-2 text-green-600">Higher = Better</td></tr>
                       <tr><td className="p-2 font-medium">Expense Ratio</td><td className="p-2">0.1%–2%+</td><td className="p-2 text-red-600">Lower = Better</td></tr>
-                      <tr><td className="p-2 font-medium">1-Year Returns</td><td className="p-2">More unstable</td><td className="p-2 text-green-600">Positive (weaker)</td></tr>
+                      <tr><td className="p-2 font-medium">1-Year Returns</td><td className="p-2">More unstable</td><td className="p-2 text-green-600">Positive <p className='text-red-600'>(weaker)</p></td></tr>
                       <tr><td className="p-2 font-medium">Fund Size (AUM)</td><td className="p-2">Small → Large</td><td className="p-2 text-green-600">Slight edge large</td></tr>
                       <tr><td className="p-2 font-medium">Risk Level</td><td className="p-2">Low → High</td><td className="p-2 text-green-600">Higher = Better</td></tr>
-                      <tr><td className="p-2 font-medium">Min SIP/Lumpsum</td><td className="p-2">₹100–₹10k+</td><td className="p-2 text-green-600">Lower = Better</td></tr>
+                      <tr><td className="p-2 font-medium">Min SIP/Lumpsum</td><td className="p-2">₹100–₹10k+</td><td className="p-2 text-red-600">Lower = Better</td></tr>
                     </tbody>
                   </table>
 
@@ -366,7 +366,7 @@ function App() {
                     Worst-scoring categories include FoFs, Gilt, Credit Risk, and Low-Duration funds.
                   </p>
 
-                  <p className="font-semibold text-center text-green-700">
+                  <p className="font-semibold text-center text-green-500">
                     🔎 Top-performing funds: high 3-year returns, low expenses, high ratings, older age, higher risk.
                   </p>
                 </Card>
@@ -385,7 +385,7 @@ function App() {
 
                   {/* FUND INPUT */}
                   <div className="space-y-2">
-                    <Label>Select / Enter Fund Name</Label>
+                    <Label>Enter Fund Name</Label>
                     <Input
                       placeholder="e.g., SBI Bluechip Fund"
                       value={fundName}
