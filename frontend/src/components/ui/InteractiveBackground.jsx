@@ -1,4 +1,3 @@
-// components/InteractiveBackground.jsx
 import { useEffect, useRef } from "react"
 import * as THREE from "three"
 
@@ -8,12 +7,7 @@ export default function InteractiveBackground() {
   useEffect(() => {
     // === Scene, Camera, Renderer ===
     const scene = new THREE.Scene()
-    const camera = new THREE.PerspectiveCamera(
-      75,
-      window.innerWidth / window.innerHeight,
-      0.1,
-      1000
-    )
+    const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000)
     camera.position.z = 5
 
     const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true })
@@ -35,8 +29,8 @@ export default function InteractiveBackground() {
 
     // === Glowing Material ===
     const material = new THREE.PointsMaterial({
-      color: new THREE.Color(0xffffff), // Tailwind blue-500
-      size: 0.08,
+      color: new THREE.Color(0xffd700), // gold color instead of blue
+      size: 0.1, // slightly larger for coin appearance
       transparent: true,
       opacity: 0.9,
       blending: THREE.AdditiveBlending, // makes glow effect
@@ -98,18 +92,11 @@ export default function InteractiveBackground() {
     canvas.height = size
     const ctx = canvas.getContext("2d")
 
-    const gradient = ctx.createRadialGradient(
-      size / 2,
-      size / 2,
-      0,
-      size / 2,
-      size / 2,
-      size / 2
-    )
-    gradient.addColorStop(0, "rgba(59,130,246,1)")   // bright center
-    gradient.addColorStop(0.3, "rgba(59,130,246,0.8)")
-    gradient.addColorStop(0.6, "rgba(59,130,246,0.3)")
-    gradient.addColorStop(1, "rgba(59,130,246,0)")
+    const gradient = ctx.createRadialGradient(size / 2, size / 2, 0, size / 2, size / 2, size / 2)
+    gradient.addColorStop(0, "rgba(255,215,0,1)") // bright gold center
+    gradient.addColorStop(0.3, "rgba(255,215,0,0.8)")
+    gradient.addColorStop(0.6, "rgba(255,215,0,0.3)")
+    gradient.addColorStop(1, "rgba(255,215,0,0)")
 
     ctx.fillStyle = gradient
     ctx.fillRect(0, 0, size, size)

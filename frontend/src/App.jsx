@@ -1,19 +1,14 @@
-import GoogleLoginButton from './components/GoogleLoginButton';
 import { useState } from "react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { Checkbox } from "@/components/ui/checkbox"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { IndianRupee } from "lucide-react"
 import { ThemeProvider } from "next-themes"
 import { Navbar } from './components/Navbar';
 import InteractiveBackground from './components/ui/InteractiveBackground'
 import { Slider } from "@/components/ui/slider"
-import { Separator } from "@/components/ui/separator"
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs"
-import { fundNames } from '../../converter/data/fundNames';
 import Dashboard from './components/Dashboard';
 import shapPlot from "@/assets/image.png";
 
@@ -74,18 +69,23 @@ function App() {
       <div className="min-h-screen bg-background/5 relative">
         <InteractiveBackground />
         <Navbar />
+        {/* Landing Page */}
+        <h1 className="flex justify-center text-9xl pt-40 pb-30 glow-yellow font-semibold">
+          FundVision
+        </h1>
 
-        <div className="container mx-auto px-4 py-8 max-w-4xl">
-
+        {/* Functions */}
+        <div className="container mx-auto px-4 max-w-4xl">
           {/* Tabs UI */}
           <Tabs value={tab} onValueChange={setTab} className="w-full">
-            <TabsList className="grid grid-cols-4 mb-6">
-              <TabsTrigger value="explain">Explain</TabsTrigger>
-              <TabsTrigger value="recommend">Recommend</TabsTrigger>
-              <TabsTrigger value="insights">Insights</TabsTrigger>
-              <TabsTrigger value="summary">Summary</TabsTrigger>
-            </TabsList>
-
+            <div className="flex justify-center">
+              <TabsList className='flex gap-32 mb-6 flex-wrap'>
+                <TabsTrigger value="explain">Explain</TabsTrigger>
+                <TabsTrigger value="recommend">Recommend</TabsTrigger>
+                <TabsTrigger value="insights">Insights</TabsTrigger>
+                <TabsTrigger value="summary">Summary</TabsTrigger>
+              </TabsList>
+            </div>
             {/* ✅ EXPLAIN TAB */}
             <TabsContent value="explain">
               <Card className="bg-background/30 backdrop-blur-sm">
@@ -324,17 +324,16 @@ function App() {
               )}
             </TabsContent>
 
-
             <TabsContent value="summary">
               <div className="space-y-6">
 
                 {/* IMAGE */}
-                <Card className="p-6 flex flex-col items-center">
+                <Card className="p-6 flex flex-col items-center bg-background">
                   <img src={shapPlot} />
                 </Card>
 
                 {/* LLM SUMMARY */}
-                <Card className="p-6 space-y-3 bg-background/30 backdrop-blur-sm">
+                <Card className="p-6 space-y-3 bg-background backdrop-blur-sm">
                   <h3 className="text-xl font-semibold text-center">Model Feature Impact Summary</h3>
 
                   <p>
@@ -372,7 +371,6 @@ function App() {
                 </Card>
               </div>
             </TabsContent>
-
 
             <TabsContent value="insights">
               <Card className="bg-background/30 backdrop-blur-sm">
@@ -454,8 +452,6 @@ function App() {
                 </p>
               )}
             </TabsContent>
-
-
           </Tabs>
         </div>
       </div>

@@ -6,12 +6,11 @@ export function Navbar() {
   const { theme, setTheme } = useTheme()
 
   return (
-    <nav className="border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
+    <nav className="border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 z-20 fixed w-full">
       <div className="container mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex h-16 items-center justify-between">
           {/* Logo/Title */}
           <div className="flex items-center">
-            <h1 className="text-xl font-bold text-primary">FundVision</h1>
           </div>
 
           {/* Right side - Theme toggle and auth buttons */}

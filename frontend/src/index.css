@@ -1,5 +1,31 @@
 @import "tailwindcss";
 
+/* in your global CSS or a .css file you import */
+@keyframes glowYellow {
+  0%, 100% {
+    text-shadow:
+      0 0 5px #fff,
+      0 0 10px #fff,
+      0 0 12px #ff0,
+      0 0 14px #ff0,
+      0 0 16px #ff0;
+  }
+  50% {
+    text-shadow:
+      0 0 18px #fff,
+      0 0 18px #fff,
+      0 0 18px #ff0,
+      0 0 18px #ff0,
+      0 0 18px #ff0;
+  }
+}
+
+.glow-yellow {
+  color: #ff0; /* yellow text */
+  animation: glowYellow 2s ease-in-out infinite alternate;
+}
+
+
 @custom-variant dark (&:is(.dark *));
 
 @theme inline {
