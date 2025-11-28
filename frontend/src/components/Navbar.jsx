@@ -1,9 +1,41 @@
 import { Button } from "@/components/ui/button"
 import { Moon, Sun } from "lucide-react"
-import { useTheme } from "next-themes"
+import { useEffect, useState } from "react"
+import { Link, useLocation } from "react-router-dom"
 
-export function Navbar() {
-  const { theme, setTheme } = useTheme()
+export default function Navbar() {
+  const [theme, setTheme] = useState("light")
+  const [mounted, setMounted] = useState(false)
+  const [isOpen, setIsOpen] = useState(false)
+  const location = useLocation()
+
+  useEffect(() => {
+    setMounted(true)
+    // Detect initial theme from html class
+    if (document.documentElement.classList.contains("dark")) {
+      setTheme("dark")
+    } else {
+      setTheme("light")
+    }
+  }, [])
+
+  useEffect(() => {
+    setIsOpen(false)
+  }, [location.pathname])
+
+  const toggleTheme = () => {
+    if (theme === "light") {
+      document.documentElement.classList.add("dark")
+      setTheme("dark")
+    } else {
+      document.documentElement.classList.remove("dark")
+      setTheme("light")
+    }
+  }
+
+  if (!mounted) return null
+
+  const isActive = (href) => location.pathname === href
 
   return (
     <nav className="border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 z-20 fixed w-full">
@@ -11,6 +43,9 @@ export function Navbar() {
         <div className="flex h-16 items-center justify-between">
           {/* Logo/Title */}
           <div className="flex items-center">
+            <Link to="/">
+              <span className="text-xl font-bold cursor-pointer">FundVision</span>
+            </Link>
           </div>
 
           {/* Right side - Theme toggle and auth buttons */}
@@ -19,7 +54,7 @@ export function Navbar() {
             <Button
               variant="ghost"
               size="icon"
-              onClick={() => setTheme(theme === "light" ? "dark" : "light")}
+              onClick={toggleTheme}
               aria-label={`Switch to ${theme === "light" ? "dark" : "light"} mode`}
               className="h-9 w-9 relative"
             >
@@ -29,18 +64,26 @@ export function Navbar() {
             </Button>
 
             {/* Auth buttons */}
-            <div className="flex items-center space-x-2">
-              <Button variant="ghost" size="sm" className="hidden sm:inline-flex">
-                Login
-              </Button>
-              <Button size="sm">Sign Up</Button>
+            <div className="hidden sm:flex items-center space-x-2">
+              <Link to="/login">
+                <Button variant={isActive("/login") ? "default" : "ghost"} size="sm">
+                  Login
+                </Button>
+              </Link>
+              <Link to="/signup">
+                <Button variant={isActive("/signup") ? "default" : "ghost"} size="sm">
+                  Sign Up
+                </Button>
+              </Link>
             </div>
 
             {/* Mobile auth buttons */}
             <div className="flex sm:hidden">
-              <Button variant="ghost" size="sm">
-                Login
-              </Button>
+              <Link to="/login">
+                <Button variant="ghost" size="sm">
+                  Login
+                </Button>
+              </Link>
             </div>
           </div>
         </div>
