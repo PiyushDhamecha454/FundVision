@@ -32,6 +32,8 @@ export default function Signup() {
       await registerUser({ name, email, password });
 
       alert("Account created successfully!");
+      //navigate to /
+      
     } catch (err) {
       setError(err.response?.data?.detail || "Registration failed");
     }

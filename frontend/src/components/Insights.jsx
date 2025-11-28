@@ -14,7 +14,7 @@ const Insights = () => {
     const findInsights = async () => {
         setLoading(true);
         try {
-            const res = await fetch(`http://127.0.0.1:8000/live_insights/${fundName}`);
+            const res = await fetch(`http://localhost:8000/live_insights/${fundName}`);
             const data = await res.json();
             console.log("Insights:", data);
             setInsightsData(data);

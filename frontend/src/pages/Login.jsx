@@ -22,7 +22,7 @@ export default function Login() {
     try {
       const res = await loginUser({ email, password });
 
-      const token = res.data.access_token;
+      const token = res.access_token;
 
       // You should store token in memory or in context (NOT localStorage ideally)
       sessionStorage.setItem("token", token);
@@ -30,6 +30,7 @@ export default function Login() {
       alert("Login successful!");
     } catch (err) {
       alert(err.response?.data?.detail || "Login failed");
+      console.log(err.response.data)
     }
 
     setIsLoading(false);
