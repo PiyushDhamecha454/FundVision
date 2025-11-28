@@ -13,7 +13,7 @@ function Home() {
         blindMinWidth={5}
         spotlightRadius={0.8}
         spotlightSoftness={1}
-        spotlightOpacity={1}
+        spotlightOpacity={0.6}
         mouseDampening={0.15}
         distortAmount={6}
         shineDirection="left"
