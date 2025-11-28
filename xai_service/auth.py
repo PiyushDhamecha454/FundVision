@@ -2,8 +2,9 @@
 from datetime import datetime, timedelta
 from typing import Optional
 
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, status, Response, Request, Cookie
 from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
+from fastapi.responses import JSONResponse
 from jose import JWTError, jwt
 from passlib.context import CryptContext
 from sqlalchemy.orm import Session
@@ -15,6 +16,12 @@ from .schemas import UserCreate, UserOut, Token
 import os
 
 router = APIRouter(prefix="/auth", tags=["Authentication"])
+
+auth_error = HTTPException(
+    status_code=status.HTTP_401_UNAUTHORIZED,
+    detail="Could not validate credentials",
+    headers={"WWW-Authenticate": "Bearer"},
+)
 
 # ---------- CONFIG ----------
 SECRET_KEY = os.getenv("SECRET_KEY", "CHANGE_THIS_TO_RANDOM_SECRET")
@@ -52,60 +59,135 @@ def authenticate_user(db: Session, email: str, password: str) -> Optional[db_mod
 
 
 # ---------- Dependency for protected routes ----------
+# In xai_service/auth.py
+
 async def get_current_user(
-    token: str = Depends(oauth2_scheme),
+    # FIX: Rename the variable to match the cookie key OR use alias
+    access_token: str = Cookie(None, alias="access_token"), 
     db: Session = Depends(get_db),
 ) -> db_models.User:
-    auth_error = HTTPException(
-        status_code=status.HTTP_401_UNAUTHORIZED,
-        detail="Could not validate credentials",
-        headers={"WWW-Authenticate": "Bearer"},
-    )
+    if not access_token:
+        # Ensure auth_error is defined as discussed previously!
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Not authenticated",
+        )
 
     try:
-        payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
+        # Use access_token here instead of token
+        payload = jwt.decode(access_token, SECRET_KEY, algorithms=[ALGORITHM])
         email: str = payload.get("sub")
         if email is None:
-            raise auth_error
+            raise HTTPException(status_code=401, detail="Invalid token")
     except JWTError:
-        raise auth_error
+        raise HTTPException(status_code=401, detail="Invalid token")
 
     user = get_user_by_email(db, email=email)
     if user is None:
-        raise auth_error
+        raise HTTPException(status_code=401, detail="User not found")
 
     return user
 
 
 # ---------- Routes ----------
-@router.post("/register", response_model=UserOut)
-def register_user(user_data: UserCreate, db: Session = Depends(get_db)):
-    existing = get_user_by_email(db, user_data.email)
-    if existing:
-        raise HTTPException(status_code=400, detail="Email already registered")
+# ---------- REGISTER ----------
+@router.post("/register", response_model=Token)
+def register_user(
+    user_data: UserCreate,
+    response: Response,
+    db: Session = Depends(get_db)
+):
+    existing_user = get_user_by_email(db, user_data.email)
+    if existing_user:
+        raise HTTPException(
+            status_code=400,
+            detail="Email already registered"
+        )
 
     user = db_models.User(
         email=user_data.email,
-        hashed_password=get_password_hash(user_data.password),
+        hashed_password=get_password_hash(user_data.password)
     )
     db.add(user)
     db.commit()
     db.refresh(user)
-    return user
+
+    # Create JWT after registration
+    access_token = create_access_token({"sub": user.email})
+
+    response.set_cookie(
+        key="access_token",
+        value=access_token,
+        httponly=True,
+        secure=False,          # set True in production
+        samesite="lax",
+        max_age=14 * 24 * 3600  # 2 weeks
+    )
+
+    return {
+        "access_token": access_token,
+        "token_type": "bearer"
+    }
 
 
+# ---------- LOGIN ----------
 @router.post("/login", response_model=Token)
 def login(
+    response: Response,
     form_data: OAuth2PasswordRequestForm = Depends(),
-    db: Session = Depends(get_db),
+    db: Session = Depends(get_db)
 ):
     user = authenticate_user(db, form_data.username, form_data.password)
     if not user:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Incorrect email or password",
-            headers={"WWW-Authenticate": "Bearer"},
+            detail="Incorrect email or password"
         )
 
-    access_token = create_access_token(data={"sub": user.email})
-    return {"access_token": access_token, "token_type": "bearer"}
+    access_token = create_access_token({"sub": user.email})
+
+    # Set JWT cookie (2 weeks)
+    response.set_cookie(
+        key="access_token",
+        value=access_token,
+        httponly=True,
+        secure=False,          # set True in production
+        samesite="lax",
+        max_age=14 * 24 * 3600
+    )
+
+    return {
+        "access_token": access_token,
+        "token_type": "bearer"
+    }
+
+def decode_token(token: str):
+    try:
+        payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
+        return payload
+    except JWTError:
+        return None
+
+@router.get("/check")
+def check_auth(request: Request):
+    """
+    Check if user is authenticated based on access_token cookie.
+    Returns user info if authenticated, else 401.
+    """
+    token = request.cookies.get("access_token")
+    if not token:
+        raise HTTPException(status_code=401, detail="Not authenticated")
+
+    payload = decode_token(token)
+    if not payload:
+        raise HTTPException(status_code=401, detail="Invalid token")
+
+    # payload should have 'sub' or user info
+    user_data = {"email": payload.get("sub"), "username": payload.get("username")}
+    return JSONResponse(content={"user": user_data})
+
+# ---------- LOGOUT ----------
+@router.post("/logout")
+def logout(response: Response):
+    response.delete_cookie("access_token")
+    return {"message": "Logged out"}
