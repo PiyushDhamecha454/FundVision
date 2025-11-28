@@ -1,36 +1,44 @@
 from dotenv import load_dotenv
 load_dotenv()
-from fastapi import FastAPI
+
+from fastapi import FastAPI, Depends
 from pydantic import BaseModel
 import pandas as pd
 import os
-import joblib
+from fastapi.middleware.cors import CORSMiddleware
+from sqlalchemy.orm import Session
 from xai_service.load_model import load_model
 from xai_service.shap_explainer import explain_prediction, generate_summary_plot
 from xai_service.live_insights import get_live_insights
-from fastapi.middleware.cors import CORSMiddleware
+from xai_service.database import Base, engine, get_db
+from xai_service import db_models
+from xai_service.auth import router as auth_router, get_current_user
 
 
+Base.metadata.create_all(bind=engine)
 
 app = FastAPI(title="FundVision XAI API")
+
 origins = [
-    "http://localhost:3000",  # Frontend local dev
-    "http://127.0.0.1:3000",  # Alternate local
-    "https://fundvision.vercel.app",  # Example production frontend (change as needed)
+    "http://localhost:3000",
+    "http://127.0.0.1:3000",
+    "https://fundvision.vercel.app",
 ]
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],           # Allow these frontend domains
+    allow_origins=["*"],    
     allow_credentials=True,
-    allow_methods=["*"],             # Allow all HTTP methods (GET, POST, etc.)
-    allow_headers=["*"],             # Allow all headers
+    allow_methods=["*"],
+    allow_headers=["*"],
 )
+
+app.include_router(auth_router)
 
 MODEL, FEATURES = load_model()
 DATA_PATH = os.path.join(os.path.dirname(__file__), "data/comprehensive_mutual_funds_data.csv")
 
-# ---------------- Schema ----------------
+
 class PredictInput(BaseModel):
     expense_ratio: float
     aum: float
@@ -43,23 +51,39 @@ class RecommendInput(BaseModel):
     rating_threshold: float = 0
     aum_preference: str = None
 
-# ---------------- Routes ----------------
+
 @app.get("/")
 def home():
-    return {"message": "Welcome to FundVision XAI API"}
+    return {"message": "Welcome to FundVision XAI API (with Auth)"}
 
+# PROTECTED: needs Bearer token
 @app.post("/predict")
-def predict(data: PredictInput):
+def predict(
+    data: PredictInput,
+    db: Session = Depends(get_db),
+    current_user: db_models.User = Depends(get_current_user),
+):
     """Predict and explain a single mutual fund"""
     input_dict = {
         "expense_ratio": data.expense_ratio,
         "fund_size_cr": data.aum,
         "rating": data.rating
     }
-    return explain_prediction(input_dict)
+    result = explain_prediction(input_dict)
 
+    
+    return {
+        "user_email": current_user.email,
+        "result": result
+    }
+
+# PROTECTED
 @app.post("/recommend")
-def recommend(preference: RecommendInput):
+def recommend(
+    preference: RecommendInput,
+    db: Session = Depends(get_db),
+    current_user: db_models.User = Depends(get_current_user),
+):
     """Recommend top mutual funds based on user preferences"""
     df = pd.read_csv(os.path.join(os.path.dirname(__file__), "data/preprocessed_funds.csv"))
 
@@ -80,8 +104,10 @@ def recommend(preference: RecommendInput):
         if preference.expense_preference.lower() == "low":
             df = df[df["expense_ratio"] <= df["expense_ratio"].quantile(0.33)]
         elif preference.expense_preference.lower() == "medium":
-            df = df[(df["expense_ratio"] > df["expense_ratio"].quantile(0.33)) &
-                    (df["expense_ratio"] <= df["expense_ratio"].quantile(0.66))]
+            df = df[
+                (df["expense_ratio"] > df["expense_ratio"].quantile(0.33)) &
+                (df["expense_ratio"] <= df["expense_ratio"].quantile(0.66))
+            ]
         elif preference.expense_preference.lower() == "high":
             df = df[df["expense_ratio"] > df["expense_ratio"].quantile(0.66)]
 
@@ -90,14 +116,19 @@ def recommend(preference: RecommendInput):
         if preference.aum_preference.lower() == "large":
             df = df[df["fund_size_cr"] >= df["fund_size_cr"].quantile(0.66)]
         elif preference.aum_preference.lower() == "medium":
-            df = df[(df["fund_size_cr"] > df["fund_size_cr"].quantile(0.33)) &
-                    (df["fund_size_cr"] <= df["fund_size_cr"].quantile(0.66))]
+            df = df[
+                (df["fund_size_cr"] > df["fund_size_cr"].quantile(0.33)) &
+                (df["fund_size_cr"] <= df["fund_size_cr"].quantile(0.66))
+            ]
         elif preference.aum_preference.lower() == "small":
             df = df[df["fund_size_cr"] <= df["fund_size_cr"].quantile(0.33)]
 
-    # If all filters removed everything
+    # If all filters removed 
     if df.empty:
-        return {"message": "No funds match your preferences."}
+        return {
+            "user_email": current_user.email,
+            "message": "No funds match your preferences."
+        }
 
     # Predict expected returns using trained model
     model, features = load_model()
@@ -105,32 +136,50 @@ def recommend(preference: RecommendInput):
     X = X.reindex(columns=features, fill_value=0)
     df["predicted_return"] = model.predict(X)
 
-    # Sort and return top 5 recommendations with fund names
     columns_to_show = [
-        "scheme_name", "expense_ratio", "fund_size_cr", "rating", "risk_level", "predicted_return"
+        "scheme_name", "expense_ratio", "fund_size_cr",
+        "rating", "risk_level", "predicted_return"
     ]
-
     available_cols = [col for col in columns_to_show if col in df.columns]
     top5 = df.nlargest(5, "predicted_return")[available_cols]
 
     return {
+        "user_email": current_user.email,
         "recommended_funds": top5.to_dict(orient="records"),
         "count": len(df)
     }
 
+# PROTECTED
 @app.get("/summary_plot")
-def shap_summary():
-    return {"summary_plot_base64": generate_summary_plot()}
+def shap_summary(
+    db: Session = Depends(get_db),
+    current_user: db_models.User = Depends(get_current_user),
+):
+    return {
+        "user_email": current_user.email,
+        "summary_plot_base64": generate_summary_plot()
+    }
 
+# PROTECTED
 @app.get("/live_insights/{fund_name}")
-def live_insights(fund_name: str):
+def live_insights(
+    fund_name: str,
+    db: Session = Depends(get_db),
+    current_user: db_models.User = Depends(get_current_user),
+):
     print(f" Fetching live insights for: {fund_name}")
     try:
         response = get_live_insights(fund_name)
         print(" Response generated successfully")
-        return response
+        return {
+            "user_email": current_user.email,
+            "data": response
+        }
     except Exception as e:
         import traceback
         print(" Error in live_insights:", str(e))
         print(traceback.format_exc())
-        return {"error": str(e)}
+        return {
+            "user_email": current_user.email,
+            "error": str(e)
+        }

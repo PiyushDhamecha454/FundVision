@@ -12,3 +12,8 @@ tavily
 beautifulsoup4  
 huggingface-hub  
 python-dotenv
+python-jose[cryptography]
+passlib[bcrypt]
+sqlalchemy
+email-validator
+python-multipart
