@@ -1,57 +1,53 @@
-import { useState } from "react"
-import { Link } from "react-router-dom" // ✅ React Router
-import { Mail, Lock, Eye, EyeOff } from "lucide-react"
-import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
-import { Label } from "@/components/ui/label"
-import InteractiveBackground from "../components/ui/InteractiveBackground"
-import { loginUser } from "../api/auth"
-
-const isDark = document.documentElement.classList.contains("dark");
+import { useState } from "react";
+import { Link, useNavigate } from "react-router-dom";
+import { Mail, Lock, Eye, EyeOff } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { useAuth } from "../context/AuthContext";
 
 export default function Login() {
-  const [email, setEmail] = useState("")
-  const [password, setPassword] = useState("")
-  const [showPassword, setShowPassword] = useState(false)
-  const [isLoading, setIsLoading] = useState(false)
+  const { checkAuth } = useAuth();
+  const navigate = useNavigate();
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     setIsLoading(true);
 
     try {
-      const res = await loginUser({ email, password });
+      const formData = new URLSearchParams();
+      formData.append("username", email);
+      formData.append("password", password);
 
-      const token = res.access_token;
+      const res = await fetch("http://localhost:8000/auth/login", {
+        method: "POST",
+        headers: { "Content-Type": "application/x-www-form-urlencoded" },
+        body: formData,
+        credentials: "include" // very important for HttpOnly cookie
+      });
 
-      // You should store token in memory or in context (NOT localStorage ideally)
-      sessionStorage.setItem("token", token);
+      if (!res.ok) {
+        const errData = await res.json();
+        throw new Error(errData.detail || "Login failed");
+      }
 
-      alert("Login successful!");
+      await checkAuth(); // update context
+      navigate("/");      // redirect after login
     } catch (err) {
-      alert(err.response?.data?.detail || "Login failed");
-      console.log(err.response.data)
+      alert(err.message);
+    } finally {
+      setIsLoading(false);
     }
-
-    setIsLoading(false);
   };
+
+  const isDark = document.documentElement.classList.contains("dark");
 
   return (
     <div className="flex min-h-[calc(100vh-64px)] items-center justify-center px-4 py-12 sm:px-6 lg:px-8">
-      <InteractiveBackground
-        gradientColors={["#FFA500", "#FFD700"]}
-        gradientColorsDark={["#0f0bef", "#ed021a"]}
-        angle={40}
-        noise={0.3}
-        blindCount={64}
-        blindMinWidth={5}
-        spotlightRadius={0.8}
-        spotlightSoftness={1}
-        spotlightOpacity={0.6}
-        mouseDampening={0.15}
-        distortAmount={6}
-        shineDirection="left"
-      />
       <div className="w-full max-w-md space-y-8">
         <div className="space-y-2 text-center">
           <h1 className="text-3xl font-bold tracking-tight">Welcome back</h1>
@@ -68,7 +64,7 @@ export default function Login() {
                 type="email"
                 placeholder="you@example.com"
                 value={email}
-                key={isDark ? 'dark' : 'light'}
+                key={isDark ? "dark" : "light"}
                 onChange={(e) => setEmail(e.target.value)}
                 className="pl-10 text-black dark:text-white"
                 required
@@ -112,5 +108,5 @@ export default function Login() {
         </div>
       </div>
     </div>
-  )
+  );
 }
