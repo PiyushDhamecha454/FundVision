@@ -1,54 +1,56 @@
-import { Button } from "@/components/ui/button"
-import { Moon, Sun } from "lucide-react"
-import { useEffect, useState } from "react"
-import { Link, useLocation } from "react-router-dom"
+import { Button } from "@/components/ui/button";
+import { Moon, Sun } from "lucide-react";
+import { useEffect, useState } from "react";
+import { Link, useLocation } from "react-router-dom";
+import { useAuth } from "@/context/AuthContext";
 
 export default function Navbar() {
-  const [theme, setTheme] = useState("light")
-  const [mounted, setMounted] = useState(false)
-  const [isOpen, setIsOpen] = useState(false)
-  const location = useLocation()
+  const { user, logout } = useAuth();
+  const [theme, setTheme] = useState("light");
+  const [mounted, setMounted] = useState(false);
+  const [isOpen, setIsOpen] = useState(false);
+  const location = useLocation();
 
   useEffect(() => {
-    setMounted(true)
+    setMounted(true);
     // Detect initial theme from html class
-    if (document.documentElement.classList.contains("dark")) {
-      setTheme("dark")
-    } else {
-      setTheme("light")
-    }
-  }, [])
+    setTheme(document.documentElement.classList.contains("dark") ? "dark" : "light");
+  }, []);
 
   useEffect(() => {
-    setIsOpen(false)
-  }, [location.pathname])
+    setIsOpen(false);
+  }, [location.pathname]);
 
   const toggleTheme = () => {
     if (theme === "light") {
-      document.documentElement.classList.add("dark")
-      setTheme("dark")
+      document.documentElement.classList.add("dark");
+      setTheme("dark");
     } else {
-      document.documentElement.classList.remove("dark")
-      setTheme("light")
+      document.documentElement.classList.remove("dark");
+      setTheme("light");
     }
-  }
+  };
 
-  if (!mounted) return null
+  useEffect(() => {
+    console.log(user);
+  },[])
 
-  const isActive = (href) => location.pathname === href
+  if (!mounted) return null;
+
+  const isActive = (href) => location.pathname === href;
 
   return (
     <nav className="border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 z-20 fixed w-full">
       <div className="container mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex h-16 items-center justify-between">
-          {/* Logo/Title */}
+          {/* Logo */}
           <div className="flex items-center">
             <Link to="/">
               <span className="text-xl font-bold cursor-pointer">FundVision</span>
             </Link>
           </div>
 
-          {/* Right side - Theme toggle and auth buttons */}
+          {/* Right side */}
           <div className="flex items-center space-x-2 sm:space-x-4">
             {/* Theme toggle */}
             <Button
@@ -65,29 +67,49 @@ export default function Navbar() {
 
             {/* Auth buttons */}
             <div className="hidden sm:flex items-center space-x-2">
-              <Link to="/login">
-                <Button variant={isActive("/login") ? "default" : "ghost"} size="sm">
-                  Login
-                </Button>
-              </Link>
-              <Link to="/signup">
-                <Button variant={isActive("/signup") ? "default" : "ghost"} size="sm">
-                  Sign Up
-                </Button>
-              </Link>
+              {user ? (
+                <>
+                  <span className="text-sm font-medium">{user.name || user.email}</span>
+                  <Button onClick={logout} variant="ghost" size="sm">
+                    Logout
+                  </Button>
+                </>
+              ) : (
+                <>
+                  <Link to="/login">
+                    <Button variant={isActive("/login") ? "default" : "ghost"} size="sm">
+                      Login
+                    </Button>
+                  </Link>
+                  <Link to="/signup">
+                    <Button variant={isActive("/signup") ? "default" : "ghost"} size="sm">
+                      Sign Up
+                    </Button>
+                  </Link>
+                </>
+              )}
             </div>
 
             {/* Mobile auth buttons */}
             <div className="flex sm:hidden">
-              <Link to="/login">
-                <Button variant="ghost" size="sm">
-                  Login
-                </Button>
-              </Link>
+              {user ? (
+                <>
+                  <span className="text-sm font-medium mr-2">{user.name || user.email}</span>
+                  <Button onClick={logout} variant="ghost" size="sm">
+                    Logout
+                  </Button>
+                </>
+              ) : (
+                <Link to="/login">
+                  <Button variant="ghost" size="sm">
+                    Login
+                  </Button>
+                </Link>
+              )}
             </div>
           </div>
         </div>
       </div>
     </nav>
-  )
+  );
 }

@@ -1,13 +1,16 @@
 import { useState } from "react"
-import { Link } from "react-router-dom" // ✅ React Router
+import { Link, useNavigate } from "react-router-dom" // ✅ React Router
 import { Mail, Lock, User, Eye, EyeOff } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import InteractiveBackground from "../components/ui/InteractiveBackground"
 import { registerUser } from "../api/auth"
+import { useAuth } from "../context/AuthContext";
 
 export default function Signup() {
+  const { checkAuth } = useAuth();
+  const navigate = useNavigate();
   const [name, setName] = useState("")
   const [email, setEmail] = useState("")
   const [password, setPassword] = useState("")
@@ -31,30 +34,19 @@ export default function Signup() {
     try {
       await registerUser({ name, email, password });
 
-      alert("Account created successfully!");
+      await checkAuth(); 
+
+      console.log("Account created successfully!");
+      navigate('/');
     } catch (err) {
       setError(err.response?.data?.detail || "Registration failed");
+    } finally {
+      setIsLoading(false); // Moved to finally block for safety
     }
-
-    setIsLoading(false);
   };
 
   return (
     <div className="flex min-h-[calc(100vh-64px)] items-center justify-center px-4 py-12 sm:px-6 lg:px-8">
-      <InteractiveBackground
-        gradientColors={["#FFA500", "#FFD700"]}
-        gradientColorsDark={["#0f0bef", "#ed021a"]}
-        angle={40}
-        noise={0.3}
-        blindCount={64}
-        blindMinWidth={5}
-        spotlightRadius={0.8}
-        spotlightSoftness={1}
-        spotlightOpacity={0.6}
-        mouseDampening={0.15}
-        distortAmount={6}
-        shineDirection="left"
-      />
       <div className="w-full max-w-md space-y-8">
         <div className="space-y-2 text-center">
           <h1 className="text-3xl font-bold tracking-tight">Create account</h1>

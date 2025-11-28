@@ -101,7 +101,7 @@ export default function Dashboard({ data }) {
   };
 
   return (
-    <div className="space-y-10 py-8">
+    <div className="space-y-10 py-8 rounded-md bg-background mt-2 dark:bg-black">
       <h2 className="text-2xl font-bold text-center mb-6">
         📈 Mutual Fund Feature Impact Dashboard
       </h2>
