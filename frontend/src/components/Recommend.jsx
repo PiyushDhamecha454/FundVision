@@ -27,6 +27,7 @@ const Recommend = () => {
             const res = await fetch("http://localhost:8000/recommend", {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
+                credentials: "include",
                 body: JSON.stringify(recommendForm),
             });
 
