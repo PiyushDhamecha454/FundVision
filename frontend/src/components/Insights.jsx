@@ -6,22 +6,39 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 
 const Insights = () => {
     const [loading, setLoading] = useState(false);
-
     const [fundName, setFundName] = useState("");
-
     const [insightsData, setInsightsData] = useState(null);
 
     const findInsights = async () => {
         setLoading(true);
+        setInsightsData(null); // Clear previous results
         try {
-            const res = await fetch(`http://localhost:8000/live_insights/${fundName}`);
-            const data = await res.json();
-            console.log("Insights:", data);
-            setInsightsData(data);
-        } catch {
-            alert("Error fetching insights");
+            const res = await fetch(`http://localhost:8000/live_insights/${fundName}`, {
+                method: "GET",
+                credentials: "include" // Important for HttpOnly cookie
+            });
+            
+            const apiResponse = await res.json();
+            console.log("Raw API Response:", apiResponse);
+
+            if (apiResponse.error) {
+                setInsightsData({ error: apiResponse.error });
+            } 
+            // ✅ FIX: Check if the data is wrapped in a 'data' key (which it is in main.py)
+            else if (apiResponse.data) {
+                setInsightsData(apiResponse.data); 
+            } 
+            // Fallback: If backend structure changes and sends data directly
+            else {
+                setInsightsData(apiResponse); 
+            }
+
+        } catch (err) {
+            console.error(err);
+            setInsightsData({ error: "Failed to connect to server" });
+        } finally {
+            setLoading(false);
         }
-        setLoading(false);
     }
 
     return (
@@ -33,12 +50,10 @@ const Insights = () => {
                 </CardHeader>
 
                 <CardContent className="space-y-4">
-
-                    {/* FUND INPUT */}
                     <div className="space-y-2">
                         <Label>Enter Fund Name</Label>
                         <Input
-                            placeholder="e.g., SBI Bluechip Fund"
+                            placeholder="e.g., Tata Digital India Fund"
                             value={fundName}
                             onChange={(e) => setFundName(e.target.value)}
                         />
@@ -53,45 +68,51 @@ const Insights = () => {
                     </Button>
                 </CardContent>
             </Card>
-            <div className='mt-9'></div>
+            
+            <div className='mt-8'></div>
+
             {/* DISPLAY RESULTS */}
+            {/* We check insightsData?.summary to ensure we have the actual data content */}
             {insightsData && !insightsData.error && (
-                <div className="space-y-6 text-lg">
+                <div className="space-y-6 text-lg animate-in fade-in slide-in-from-bottom-4 duration-500">
 
                     {/* SUMMARY */}
-                    <Card className="p-5 border">
-                        <h4 className="font-semibold text-3xl text-black">Summary</h4>
-                        <p className="text-gray-700">{insightsData.summary || "No summary available"}</p>
+                    <Card className="p-6 border shadow-sm text-black dark:text-white">
+                        <h4 className="font-semibold text-2xl mb-4">Summary</h4>
+                        <div className="text-black dark:text-white leading-relaxed">
+                            {insightsData.summary || "No summary available"}
+                        </div>
                     </Card>
 
                     {/* ARTICLES */}
-                    <div className='ml-3'>
-                        <h4 className="font-semibold text-lg mb-2">Top News Articles</h4>
-                        <ul className="space-y-2">
+                    <Card className="p-6 border shadow-sm">
+                        <h4 className="font-semibold text-xl mb-4">Top News Articles</h4>
+                        <ul className="space-y-3">
                             {insightsData.top_articles?.map((article, index) => (
-                                <li key={index}>
+                                <li key={index} className="flex items-start gap-2">
+                                    <span className="mt-1">📰</span>
                                     <a
                                         href={article.url}
                                         target="_blank"
                                         rel="noopener noreferrer"
-                                        className="text-blue-600 hover:text-blue-800 hover:underline"
+                                        className="text-blue-600 hover:text-blue-800 hover:underline font-medium"
                                     >
-                                        🔗 {article.title}
+                                        {article.title}
                                     </a>
                                 </li>
                             ))}
                         </ul>
-                        <p className="text-sm text-gray-500 mt-2 ml-2">
-                            Total Articles: {insightsData.total_articles}
+                        <p className="text-sm text-muted-foreground mt-4 border-t pt-2">
+                            Total Sources: {insightsData.total_articles}
                         </p>
-                    </div>
+                    </Card>
                 </div>
             )}
 
             {insightsData?.error && (
-                <p className="text-red-500 mt-4 font-medium">
+                <div className="p-4 rounded-lg bg-destructive/10 text-destructive font-medium mt-4">
                     ⚠️ {insightsData.error}
-                </p>
+                </div>
             )}
         </>
     )
